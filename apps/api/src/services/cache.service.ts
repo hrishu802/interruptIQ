@@ -3,7 +3,7 @@ import { env } from '../config/env';
 import { logger } from '../config/logger';
 
 export class CacheService {
-  private redis: Redis | null = null;
+  private redis: Redis.Redis | null = null;
   private fallbackCache: Map<string, { value: string; expiresAt: number }> = new Map();
   private isRedisHealthy = false;
 
@@ -27,7 +27,7 @@ export class CacheService {
         logger.info({ redisUrl: env.REDIS_URL }, '🔌 Distributed Redis cache connected successfully');
       });
 
-      this.redis.on('error', (err) => {
+      this.redis.on('error', (err: Error) => {
         this.isRedisHealthy = false;
         logger.warn({ error: err.message }, '⚠️ Redis client disconnected or unavailable. Graceful fallback active.');
       });
@@ -42,6 +42,10 @@ export class CacheService {
     if (this.redis) {
       await this.redis.quit().catch(() => {});
     }
+  }
+
+  getRedisClient(): Redis.Redis | null {
+    return this.isRedisHealthy ? this.redis : null;
   }
 
   async get<T>(key: string): Promise<T | null> {
